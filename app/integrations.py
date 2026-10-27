@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from . import db
 from .intelligence import model_ready
 from .planner import AGENTS
+from .toolchains import list_profiles
 from .security import authorize
 
 router = APIRouter(prefix='/api', dependencies=[Depends(authorize)],tags=['operations'])
@@ -45,3 +46,7 @@ def recent_events(limit: int=40):
 @router.get('/agents')
 def list_agents():
     return [{'id':identifier,'name':label,'mission':purpose, 'execution':'policy-controlled'} for identifier,label,purpose in AGENTS]
+
+@router.get('/toolchains')
+def toolchains():
+    return list_profiles()

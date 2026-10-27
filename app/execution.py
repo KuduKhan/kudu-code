@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
+from .toolchains import PROFILES, run_verification
 from . import db
 from .security import authorize
 from .tasks import get_task_or_404
@@ -18,7 +19,7 @@ class Approval(BaseModel):
     confirm: bool
 
 class VerifyRequest(BaseModel):
-    command: str = Field(default='python-syntax', pattern=r'^python-syntax$')
+    command: str = Field(default='python-syntax', pattern=r'^(python-syntax|javascript-syntax)$')
 
 class PushRequest(BaseModel):
     confirm: bool
@@ -72,27 +73,13 @@ def verify_task(task_id: str, request: VerifyRequest):
     if task['status'] not in ('implemented','verification_failed'):
         raise HTTPException(409,'Task must be committed before verification')
     inspect_repo(root)
-    pyfiles = sorted(x for x in root.rglob('*.py') if '.git' not in x.parts and not x.is_symlink())
-    if not pyfiles:
-        raise HTTPException(422,'No Python files; configure a suitable language-specific runner')
-    image = os.getenv('KUDU_DOCKER_IMAGE','python:3.13-slim')
-    if not image.startswith('python:') or len(image)>60 or any(c not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:.-_' for c in image):
-        raise HTTPException(500,'Invalid Docker verification image setting')
-    program = "import ast,pathlib; files=list(pathlib.Path('/code').rglob('*.py')); [ast.parse(p.read_text(encoding='utf-8'),filename=str(p)) for p in files]; print(f'{len(files)} Python files parsed')"
-    cmd = ['docker','run','--rm','--network=none','--read-only','--cap-drop=ALL','--security-opt=no-new-privileges',
-           '--pids-limit=64','--memory=512m','--cpus=1','--user=65534:65534',
-           '--mount',f'type=bind,src={root},dst=/code,readonly', '--tmpfs','/tmp:rw,noexec,nosuid,size=32m',
-           image,'python','-c',program]
-    try:
-        completed = subprocess.run(cmd, capture_output=True,text=True,timeout=100)
-    except (FileNotFoundError,subprocess.TimeoutExpired) as exc:
-        raise HTTPException(503,'Docker unavailable or verification timed out; no host execution fallback') from exc
-    passed=completed.returncode==0
+    verification=run_verification(root, request.command)
+    passed=verification['passed']
     status='verified' if passed else 'verification_failed'
-    output=(completed.stdout+'\n'+completed.stderr)[-2500:]
+    output=verification['output']
     db.execute('UPDATE tasks SET status=?,result=?,updated_at=? WHERE id=?',(status,output,db.stamp(),task_id))
     db.log('verification', f'Isolated syntax verification: {status}',task_id,project['id'])
-    return {'status':status,'passed':passed,'output':output,'scope':'Python syntax only; not a full functional or security test'}
+    return {'status':status,'passed':passed,'output':output,'scope':verification['scope']}
 
 @router.post('/{task_id}/push')
 def push_branch(task_id: str, request: PushRequest):
