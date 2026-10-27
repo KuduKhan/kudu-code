@@ -1,0 +1,4 @@
+# KUDU CODE — Vercel read-only preview entrypoint
+# Explicitly avoid deploying app.main (the local operator control plane).
+[tool.vercel]
+entrypoint = "index:app"
