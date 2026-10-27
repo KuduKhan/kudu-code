@@ -52,3 +52,5 @@ from .repositories import router as repo_router
 app.include_router(repo_router)
 from .execution import router as execution_router
 app.include_router(execution_router)
+from .integrations import router as integrations_router
+app.include_router(integrations_router)
