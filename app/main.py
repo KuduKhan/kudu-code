@@ -46,3 +46,5 @@ from .projects import router as projects_router
 app.include_router(projects_router)
 from .tasks import router as tasks_router
 app.include_router(tasks_router)
+from .proposals import router as proposals_router
+app.include_router(proposals_router)
