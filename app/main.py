@@ -44,3 +44,5 @@ def overview():
 
 from .projects import router as projects_router
 app.include_router(projects_router)
+from .tasks import router as tasks_router
+app.include_router(tasks_router)
