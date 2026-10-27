@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#070c14" />
+  <meta name="description" content="KUDU CODE — Autonomous engineering, under your control." />
+  <title>KUDU CODE — Engineering Command Center</title>
+  <link rel="stylesheet" href="/assets/styles.css" />
+</head>
+<body>
+  <div id="app" class="shell">
+    <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+      <div class="brand">
+        <div class="brandmark" aria-hidden="true"><span>K</span><i></i></div>
+        <div><div class="brand-title">KUDU <b>CODE</b></div><div class="brand-caption">AGENTIC ENGINEERING</div></div>
+      </div>
+      <div class="sidebar-scroll">
+        <p class="nav-label">WORKSPACE</p>
+        <nav class="nav-group" aria-label="Workspace">
+          <button class="nav active" data-view="dashboard"><span class="nav-icon">◫</span>Overview</button>
+          <button class="nav" data-view="projects"><span class="nav-icon">▣</span>Projects</button>
+          <button class="nav" data-view="tasks"><span class="nav-icon">◈</span>Engineering tasks</button>
+          <button class="nav" data-view="agents"><span class="nav-icon">✳</span>Agent studio</button>
+        </nav>
+        <p class="nav-label">INFRASTRUCTURE</p>
+        <nav class="nav-group" aria-label="Infrastructure">
+          <button class="nav" data-view="integrations"><span class="nav-icon">⟁</span>Integrations</button>
+          <button class="nav" data-view="activity"><span class="nav-icon">◷</span>Activity log</button>
+          <button class="nav" data-view="settings"><span class="nav-icon">⚙</span>Settings</button>
+        </nav>
+      </div>
+      <div class="sidebar-bottom">
+        <div class="agent-health"><div class="health-pulse"></div><div><b>Control plane</b><span id="engine-health">Checking connection</span></div></div>
+        <div class="profile"><div class="avatar">KC</div><div><b>Local operator</b><span>Single-user preview</span></div><span class="more">···</span></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar-left"><button class="icon-btn mobile-menu" id="menu" aria-label="Open navigation">☰</button><span class="breadcrumb">KUDU /</span><b id="breadcrumb">Overview</b></div>
+        <div class="topbar-right"><span class="sys-tag" id="api-status"><span class="signal"></span> Connecting</span><button class="header-btn" id="header-new" type="button">＋ <span>New task</span></button></div>
+      </header>
+      <div id="view" class="content" aria-live="polite"></div>
+      <footer class="footer"><span>© 2026 KUDU CODE · Built to engineer responsibly</span><span id="footer-version">Control plane</span></footer>
+    </main>
+  </div>
+  <div id="overlay" class="overlay hidden" role="presentation"></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="/assets/app.js" defer></script>
+</body>
+</html>
