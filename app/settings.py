@@ -13,4 +13,4 @@ def workspace_root() -> Path:
 def model_name() -> str:
     return os.getenv("KUDU_MODEL", "").strip()
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"

@@ -41,3 +41,6 @@ def overview():
     active = db.one("SELECT COUNT(*) AS n FROM tasks WHERE status IN ('queued','planned','awaiting_approval','running')")['n']
     complete = db.one("SELECT COUNT(*) AS n FROM tasks WHERE status='completed'")['n']
     return {'projects': project_count, 'tasks': task_count, 'active': active, 'completed': complete, 'version': VERSION}
+
+from .projects import router as projects_router
+app.include_router(projects_router)
