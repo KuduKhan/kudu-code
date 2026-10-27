@@ -64,8 +64,9 @@ function taskCard(t){
  if(t.status==='awaiting_approval') actions+=buttons('Review & apply','primary',`data-action="review" data-id="${e(t.id)}"`);
  if(t.status==='implemented'||t.status==='verification_failed') actions+=buttons('Verify in Docker','primary',`data-action="verify" data-id="${e(t.id)}"`);
  if(t.status==='verified') actions+=buttons('Push task branch','primary',`data-action="push" data-id="${e(t.id)}"`);
+ if(t.status==='completed'&&!t.pr_url) actions+=buttons('Open GitHub PR','primary',`data-action="create-pr" data-id="${e(t.id)}"`);
  if(['planned','awaiting_approval','failed'].includes(t.status))actions+=buttons('Cancel','danger',`data-action="cancel" data-id="${e(t.id)}"`);
- return `<article class="card task-card"><div class="task-meta"><span class="pill ${e(t.status)}">${e(titleCase(t.status))}</span><span class="muted" style="font-size:11px">${e(fmtDate(t.created_at))}</span></div><h3>${e(t.title)}</h3><p>${e(short(t.instruction,220))}</p><p style="font-size:11px">Project: <strong>${e(projectName(t.project_id))}</strong> ${t.branch?'· Branch: '+e(t.branch):''}</p><div class="task-actions">${actions}</div><div class="task-plan ${open?'show':''}">${t.plan?.length?t.plan.map(s=>`<div class="step"><div class="step-num">${e(s.id)}</div><div><strong>${e(s.title)}</strong><br>${e(s.objective)}</div></div>`).join(''):'No plan'}${t.result?`<div class="note">${e(t.result)}</div>`:''}</div></article>`;
+ return `<article class="card task-card"><div class="task-meta"><span class="pill ${e(t.status)}">${e(titleCase(t.status))}</span><span class="muted" style="font-size:11px">${e(fmtDate(t.created_at))}</span></div><h3>${e(t.title)}</h3><p>${e(short(t.instruction,220))}</p><p style="font-size:11px">Project: <strong>${e(projectName(t.project_id))}</strong> ${t.branch?'· Branch: '+e(t.branch):''} ${t.pr_url?`· <a href="${e(t.pr_url)}" target="_blank" rel="noopener noreferrer">Pull request ↗</a>`:''}</p><div class="task-actions">${actions}</div><div class="task-plan ${open?'show':''}">${t.plan?.length?t.plan.map(s=>`<div class="step"><div class="step-num">${e(s.id)}</div><div><strong>${e(s.title)}</strong><br>${e(s.objective)}</div></div>`).join(''):'No plan'}${t.result?`<div class="note">${e(t.result)}</div>`:''}</div></article>`;
 }
 function tasksView(){
  return pageHeading('OPERATIONS','Engineering tasks','Plan, review and execute bounded AI-assisted development workflows.',buttons('＋ New task','primary','data-action="new-task"'))+
@@ -110,6 +111,7 @@ async function executeAction(action,id){
   if(action==='apply'){if(!confirm('Commit these AI-proposed file changes to a new task branch?'))return;await post(`/api/tasks/${id}/apply`,{confirm:true});closeModal();toast('Approved changes committed to task branch. Verification is still required.')}
   if(action==='verify'){await post(`/api/tasks/${id}/verify`,{command:'python-syntax'});toast('Docker verification finished. Inspect task result for details.')}
   if(action==='push'){if(!confirm('Push the verified task branch to GitHub? This will not merge or deploy production.'))return;await post(`/api/tasks/${id}/push`,{confirm:true});toast('Task branch pushed to GitHub.')}
+  if(action==='create-pr'){if(!confirm('Create a GitHub pull request for this completed task branch?'))return;const response=await post(`/api/tasks/${id}/pull-request`,{confirm:true});toast('Pull request created: '+response.pull_request_url)}
   if(action==='check-provider'){const res=await get(`/api/integrations/${id}/check`);toast(`${titleCase(id)}: ${res.reason}`,!res.connected)}
   if(action!=='check-provider' && action!=='inspect-repo')await load();
  }catch(err){toast(err.message,true)}finally{state.busy=false}

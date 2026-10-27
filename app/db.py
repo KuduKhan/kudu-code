@@ -42,6 +42,7 @@ def initialize():
           title TEXT NOT NULL, instruction TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'queued',
           plan TEXT NOT NULL DEFAULT '[]', proposal TEXT NOT NULL DEFAULT '',
           branch TEXT NOT NULL DEFAULT '', result TEXT NOT NULL DEFAULT '',
+          pr_url TEXT NOT NULL DEFAULT '',
           created_at TEXT NOT NULL, updated_at TEXT NOT NULL
         );
         CREATE TABLE IF NOT EXISTS events (
@@ -51,6 +52,9 @@ def initialize():
         CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id);
         CREATE INDEX IF NOT EXISTS idx_events_created ON events(created_at DESC);
         """)
+        existing = {r['name'] for r in db.execute('PRAGMA table_info(tasks)')}
+        if 'pr_url' not in existing:
+            db.execute("ALTER TABLE tasks ADD COLUMN pr_url TEXT NOT NULL DEFAULT ''")
 
 def rows(query: str, values=()):
     with connect() as db:

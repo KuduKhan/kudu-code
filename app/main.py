@@ -23,7 +23,7 @@ async def security_headers(request: Request, call_next):
     response.headers['Referrer-Policy'] = 'no-referrer'
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['Cache-Control'] = 'no-store'
-    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; object-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; object-src 'none'; frame-ancestors 'none'; base-uri 'none'"
     return response
 
 @app.get('/')
@@ -54,3 +54,5 @@ from .execution import router as execution_router
 app.include_router(execution_router)
 from .integrations import router as integrations_router
 app.include_router(integrations_router)
+from .github import router as github_router
+app.include_router(github_router)

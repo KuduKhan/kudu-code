@@ -2,6 +2,7 @@
 from __future__ import annotations
 import hashlib
 import os
+import re
 from pathlib import Path, PurePosixPath
 import subprocess
 from fastapi import HTTPException
@@ -74,6 +75,9 @@ def source_context(root: Path, limit: int=37000):
             data = path.read_text('utf-8')
             if len(data)>14000: continue
             if used + len(data) > limit: break
+            # Best-effort redaction is not a DLP guarantee: operators must audit repositories.
+            data = re.sub(r'(?im)^([^\n]*?(?:api[_-]?key|access[_-]?token|client[_-]?secret|password)\s*[=:]\s*)[^\n]+',r'\1[REDACTED]',data)
+            data = re.sub(r'-----BEGIN [^-]*PRIVATE KEY-----[\s\S]*?-----END [^-]*PRIVATE KEY-----','[PRIVATE KEY REDACTED]',data)
             chunks.append(f'### {name}\n{data}')
             used += len(data)
         except (UnicodeError,OSError,HTTPException):

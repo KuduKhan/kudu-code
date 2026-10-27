@@ -10,9 +10,9 @@ KUDU CODE is being built with a secure-by-default local dashboard, persistent pr
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
 pip install -r requirements-dev.txt
-uvicorn app.main:app --host 127.0.0.1 --port 8000
+KUDU_DEV_MODE=1 uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
-Open http://127.0.0.1:8000. For remote use, set a strong `KUDU_CONTROL_TOKEN` and put the service behind TLS, an identity-aware reverse proxy, and rate limits. The bearer token must not be distributed to other users.
+Open http://127.0.0.1:8000. `KUDU_DEV_MODE=1` is unsafe behind any reverse proxy and must never be enabled in hosted environments. For remote use, set a strong `KUDU_CONTROL_TOKEN` and put the service behind TLS, an identity-aware reverse proxy, and rate limits. The bearer token must not be distributed to other users.
 
 ## Security model
 

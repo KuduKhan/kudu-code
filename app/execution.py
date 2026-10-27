@@ -4,6 +4,8 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import tempfile
+import stat
 import subprocess
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -98,7 +100,24 @@ def push_branch(task_id: str, request: PushRequest):
         raise HTTPException(409,'Current branch differs from task branch')
     if not task['branch'].startswith('kudu/task-'):
         raise HTTPException(403,'Only task branches may be pushed')
-    _git(['push','origin',f"{task['branch']}:{task['branch']}"],root,timeout=90)
+    token=os.getenv('GITHUB_TOKEN')
+    if token:
+        # Temporary GIT_ASKPASS helper: no tokens in remotes or command line.
+        with tempfile.TemporaryDirectory(prefix='kudu-askpass-') as tmp:
+            helper=Path(tmp)/'askpass.sh'
+            helper.write_text('#!/bin/sh\ncase "$1" in *Username*) printf x-access-token;; *Password*) printf %s "$GITHUB_TOKEN";; esac\n')
+            helper.chmod(stat.S_IRUSR|stat.S_IWUSR|stat.S_IXUSR)
+            env={**os.environ,'GIT_ASKPASS':str(helper),'GIT_TERMINAL_PROMPT':'0'}
+            try:
+                result=subprocess.run(['git','-c','core.hooksPath=/dev/null','push','origin',f"{task['branch']}:{task['branch']}"],
+                                      cwd=str(root),env=env,text=True,capture_output=True,timeout=90)
+            except (FileNotFoundError,subprocess.TimeoutExpired) as exc:
+                raise HTTPException(503,'Git push unavailable or timed out') from exc
+            if result.returncode:
+                raise HTTPException(502,'GitHub branch push failed; check token repository permissions')
+    else:
+        # A configured Git credential manager may authenticate in local operator environments.
+        _git(['push','origin',f"{task['branch']}:{task['branch']}"],root,timeout=90)
     db.execute("UPDATE tasks SET status='completed',result=?,updated_at=? WHERE id=?",
                ('Branch pushed successfully; PR/release approval still required',db.stamp(),task_id))
     db.log('branch_pushed',f"Branch pushed: {task['branch']}",task_id,project['id'])
