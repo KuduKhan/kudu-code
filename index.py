@@ -7,14 +7,29 @@ approved operator workflow until a durable, authenticated backend exists.
 """
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from app.planner import AGENTS
 
+# Keep the hosted preview independent of the local operator modules.
+# Only static role descriptions are exposed, with no agent execution.
+AGENTS = (
+    ("architect", "Architect", "Design the requirements and architecture"),
+    ("frontend", "Frontend", "Implement responsive accessible UI"),
+    ("backend", "Backend", "Implement routes, services and business logic"),
+    ("database", "Database", "Define schema and verify data policies"),
+    ("devops", "DevOps", "Manage repositories, CI and environments"),
+    ("qa", "Quality", "Implement and execute functional regression tests"),
+    ("security", "Security", "Evaluate data access, inputs, and supply-chain risks"),
+    ("review", "Reviewer", "Review diff and verify acceptance criteria"),
+)
 ROOT = Path(__file__).resolve().parent
+WEB = ROOT / "web"
 VERSION = "1.0.0-preview"
 app = FastAPI(title="KUDU CODE — Read-only Preview", version=VERSION, docs_url=None, redoc_url=None, openapi_url=None)
-app.mount("/assets", StaticFiles(directory=str(ROOT / "web")), name="assets")
+# Never crash at cold-start just because static files were omitted from a bundle.
+# Missing static files are observable via /api/health rather than an import-time 500.
+if WEB.is_dir():
+    app.mount("/assets", StaticFiles(directory=str(WEB)), name="assets")
 
 @app.middleware("http")
 async def secure_preview(request: Request, call_next):
@@ -35,11 +50,22 @@ async def secure_preview(request: Request, call_next):
 
 @app.get("/")
 def homepage():
-    return FileResponse(ROOT / "web" / "index.html")
+    page = WEB / "index.html"
+    if not page.is_file():
+        return HTMLResponse(
+            "<!doctype html><title>KUDU CODE preview unavailable</title>"
+            "<h1>Preview assets unavailable</h1>"
+            "<p>The deployment does not contain web/index.html. "
+            "Check the Vercel build output and redeploy the complete repository.</p>",
+            status_code=503,
+        )
+    return FileResponse(page)
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "service": "KUDU CODE", "version": VERSION, "preview": True, "read_only": True}
+    return {"status": "ok" if (WEB / "index.html").is_file() else "degraded",
+            "service": "KUDU CODE", "version": VERSION, "preview": True,
+            "read_only": True, "assets_available": (WEB / "index.html").is_file()}
 
 @app.get("/api/overview")
 def overview():
