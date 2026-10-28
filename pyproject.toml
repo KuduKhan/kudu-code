@@ -1,4 +1,21 @@
-# KUDU CODE — Vercel read-only preview entrypoint
-# Explicitly avoid deploying app.main (the local operator control plane).
+# KUDU CODE — pinned Python runtime contract for FastAPI on Vercel.
+# Keep these ranges aligned with requirements.txt for the local operator.
+[project]
+name = "kudu-code"
+version = "1.0.0"
+description = "KUDU CODE autonomous engineering control plane and read-only cloud showcase"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.115,<1",
+    "uvicorn>=0.30,<1",
+    "httpx>=0.27,<1",
+    "pydantic>=2,<3",
+    "python-dotenv>=1,<2",
+]
+
 [tool.vercel]
 entrypoint = "index:app"
+
+# Keep this preview's static assets behind the ASGI middleware.
+[tool.vercel.fastapi.static]
+cdn = false
