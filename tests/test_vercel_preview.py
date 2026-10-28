@@ -15,6 +15,7 @@ def test_preview_dashboard_and_health():
     assert status.status_code == 200
     assert status.json()["read_only"] is True
     assert status.json()["preview"] is True
+    assert status.json()["assets_available"] is True
 
 
 def test_preview_api_has_no_persistent_or_live_data():
@@ -49,3 +50,15 @@ def test_security_headers_and_static_files():
     assert "frame-ancestors 'none'" in response.headers["content-security-policy"]
     assert client.get("/assets/preview.js").status_code == 200
     assert client.get("/assets/preview.css").status_code == 200
+
+
+def test_missing_dashboard_asset_gives_diagnostic_response(tmp_path, monkeypatch):
+    import index
+    monkeypatch.setattr(index, "WEB", tmp_path)
+    response = client.get("/")
+    assert response.status_code == 503
+    assert "Preview assets unavailable" in response.text
+    status = client.get("/api/health")
+    assert status.status_code == 200
+    assert status.json()["status"] == "degraded"
+    assert status.json()["assets_available"] is False
